@@ -1,70 +1,189 @@
 <!DOCTYPE>
 <html>
 	<head>
-		<script src="UI/libs/jquery.js" type="text/javascript"></script>
-		<script src="UI/libs/jquery.tmpl.min.js" type="text/javascript"></script>
-		<script src="UI/libs/jquery-ui.min.js" type="text/javascript"></script>
-		<link href="UI/libs/jquery-ui.min.css" rel="stylesheet"></link>
-		
-		<script src="libs/lodash.min.js"></script>
-		<script src='libs/anonymousassertion.js'></script>
-		<script src="kore-bot-sdk-client.js"></script>
-		<script src="UI/chatWindow.js" type="text/javascript"></script>
-		<link href="UI/chatWindow.css" rel="stylesheet"></link>
-		<script type="text/javascript">
-		$(document).on("ready",function(){
-			function assertion(options, callback) {
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.1, maximum-scale=1.0">
+		<script src="./libs/jquery.js" type="text/javascript"></script>
+		<script src="./libs/jquery.tmpl.min.js" type="text/javascript"></script>
+		<script src="./libs/jquery-ui.min.js" type="text/javascript"></script>
+		<link href="./libs/jquery-ui.min.css" rel="stylesheet"></link>
 
-				// Client has to fill the claims and call the callback.
-				$.ajax({
-					url: "https://bots.kore.com/api/users/sts",
-					type: 'post',
-					headers: {
-						Authorization: "bearer xyz------"
-					},
-					dataType: 'json',
-					success: function (data) {
-						options.assertion = data.jwt
-						callback(null, options);
+		<script src="../libs/lodash.min.js"></script>
+		
+		<script src="../libs/d3.v4.min.js"></script>
+		<script src="../libs/KoreGraphAdapter.js" type="text/javascript"></script>
+		<script src='../libs/anonymousassertion.js'></script>
+		<script src="../kore-bot-sdk-client.js"></script>
+		<script src="chatWindow.js" type="text/javascript"></script>
+		<script src="../libs/emoji.js" type="text/javascript"></script>
+		<script src="../libs/recorder.js" type="text/javascript"></script>
+		<script src="../libs/recorderWorker.js" type="text/javascript"></script>
+		<link href="chatWindow.css" rel="stylesheet"></link>
+		<link href="../libs/emojione.sprites.css" rel="stylesheet"></link>
+		<link href="../libs/purejscarousel.css" rel="stylesheet"></link>
+		<script src="../libs/purejscarousel.js" type="text/javascript"></script>
+		<script src="custom/customTemplate.js" type="text/javascript"></script>
+		<link href="custom/customTemplate.css" rel="stylesheet"></link>
+		<script type="text/javascript" src="../libs/speech/app.js"></script>
+		<script type="text/javascript" src="../libs/speech/key.js"></script>
+		<script type="text/javascript" src="../libs/client_api.js"></script>
+		<script type="text/javascript">
+			$(document).ready(function () {
+				function assertion(options, callback) {
+					var jsonData = {
+						"clientId": "cs-a9fea238-fe02-5e36-a078-fb09b3627dd5",
+						"clientSecret": "A/Iog54VcF623WUBk4krvX0QELGchW1d4vygB9cQpsA=",
+						"identity": botOptions.userIdentity,
+						"aud": "",
+						"isAnonymous": true
+					};
+					$.ajax({
+						url: "http://localhost:3000/api/" + "users/sts",
+						type: 'post',
+						data: jsonData,
+						dataType: 'json',
+						success: function (data) {
+							options.assertion = data.jwt;
+							options.handleError = koreBot.showError;
+							options.chatHistory = koreBot.chatHistory;
+							options.botDetails = koreBot.botDetails;
+							callback(null, options);
+							setTimeout(function () {
+								if (koreBot && koreBot.initToken) {
+									koreBot.initToken(options);
+								}
+							}, 2000);
+						},
+						error: function (err) {
+							koreBot.showError(err.responseText);
+						}
+					});
+				}
+
+				var botOptions = {};
+				botOptions.logLevel = 'debug';
+				botOptions.koreAPIUrl = "https://bots.kore.ai/api/";
+				botOptions.koreSpeechAPIUrl = "https://speech.kore.ai/";
+				//botOptions.bearer = "bearer xyz-------------------";
+				botOptions.ttsSocketUrl = 'wss://speech.kore.ai/tts/ws';
+				botOptions.userIdentity = 'userIdentity';// Provide users email id here
+				botOptions.recorderWorkerPath = '../libs/recorderWorker.js';
+				botOptions.assertionFn = assertion;
+				botOptions.koreAnonymousFn = koreAnonymousFn;
+				botOptions.clientId   = "your clientId"; // secure client-id
+				botOptions.botInfo = {name:"My Bot","_id":"st-4a114fe6-f3da-5fde-b330-a96d09edaa6f"}; // bot name is case sensitive
+				
+				var chatConfig={
+					botOptions:botOptions,
+					allowIframe: true,
+					isSendButton: false,
+					isTTSEnabled: true,
+					isSpeechEnabled: true,
+					allowGoogleSpeech: true,
+					allowLocation: true,
+					loadHistory: true,
+					messageHistoryLimit: 10,
+					autoEnableSpeechAndTTS: false,
+					graphLib: "d3"
+				};
+				/* 
+					allowGoogleSpeech will use Google cloud service api.
+					Google speech key is required for all browsers except chrome.
+					On Windows 10, Microsoft Edge will support speech recognization.
+				 */
+				var koreBot = koreBotChat();
+				koreBot.show(chatConfig);
+				$('.openChatWindow').click(function () {
+					//alert("hi");
+					koreBot.show(chatConfig);
+				});
+				
+				// When the user clicks the button, open the modal 
+				$('.myBtn').click(function() {
+					//alert("hi");
+					$('#myModal').show();
+				});
+				
+				function test(){
+					alert("Hi");
 					}
-				})
+				// When the user clicks on <span> (x), close the modal
+				$('.close').click(function() {
+					$('#myModal').hide();
+				});
+
+				// When the user clicks anywhere outside of the modal, close it
+				window.onclick = function(event) {
+					if (event.target == $('#myModal')[0]) {
+						$('#myModal').hide();
+					}
+				}
+			});
+			
+			
+		</script>
+		
+		<style>
+			body {font-family: Arial, Helvetica, sans-serif;}
+
+			/* The Modal (background) */
+			.modal {
+				display: none; /* Hidden by default */
+				position: fixed; /* Stay in place */
+				z-index: 1; /* Sit on top */
+				padding-top: 100px; /* Location of the box */
+				left: 0;
+				top: 0;
+				width: 50%; /* Full width */
+				height: 100%; /* Full height */
+				overflow: auto; /* Enable scroll if needed */
+				background-color: rgb(0,0,0); /* Fallback color */
+				background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
 			}
 
-			var botOptions = {};
-			botOptions.logLevel = 'debug';
-			botOptions.koreAPIUrl = "https://pilot-bots.kore.com/api/";
-			botOptions.assertionFn = assertion;
-			botOptions.isLoggedIn = false; // false: triggers anonymus flow. set it to true for log-in flow.
-			/*
-			 Below config:(To support the anonymous user in test environments only.)
-			 Case.1:Anonymous User
-			        a. set it to false if the client defined the assertion for Anonymous User.
-			        b. set it to true if the client have not defined the assertion for Anonymous User.
-			 Case.2:Logged-In User
-			        a. set it to false if the client defined the assertion.
-			*/
-			botOptions.test = true;
-			botOptions.koreAnonymousFn = koreAnonymousFn;
-			botOptions.clientId   = "cs-8e62863b-13e9-5198-a55e-fdbd7047117a"; // secure client-id
-            
-			botOptions.botInfo = {name:"SAP Service","_id":"st-975926d5-2761-56bc-83f1-8f3c1b320bd8"}; // bot name is case sensitive
-			
-			var chatConfig={
-				botOptions:botOptions,
-				allowIframe: true
-			};
+			/* Modal Content */
+			.modal-content {
+				background-color: #fefefe;
+				margin: auto;
+				padding: 20px;
+				border: 1px solid #888;
+				width: 80%;
+			}
 
-			koreBotChat().show(chatConfig);
-			$('.openChatWindow').click(function(){
-				koreBotChat().show(chatConfig);
-			});
-		});
-		</script>
+			/* The Close Button */
+			.close {
+				color: #aaaaaa;
+				float: right;
+				font-size: 28px;
+				font-weight: bold;
+			}
+
+			.close:hover,
+			.close:focus {
+				color: #000;
+				text-decoration: none;
+				cursor: pointer;
+			}
+			</style>
 	</head>
-	<body style="margin:0px;padding:0px">
-	   <img src="C4CServiceHome.png"/>
-		<div id="chatContainer" style="position: top; position: absolute; top: 0px;">
-		<button class="openChatWindow">Open Chat Window</button>
+
+	<body>
+		<div id="chatContainer">
+			<button class="openChatWindow">Open Chat Window</button>
+			<button class="myBtn">Open Modal</button>
+			<a href="javascript:alert('Hi');">Click Here</a>
 		</div>
+		
+		<!-- The Modal -->
+		<div id="myModal" class="modal">
+
+			<!-- Modal content -->
+			<div class="modal-content">
+				<span class="close">&times;</span>
+				<p>Some text in the Modal..</p>
+			</div>
+
+		</div>
+		
 	</body>
+
 </html>
